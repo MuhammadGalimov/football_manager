@@ -1,0 +1,1 @@
+{"players":[{"name":"muhagal","position":"Forward","hand":"Right","cost":100}]}
