@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 
-use super::player::Player;
+use super::player::{Player, Position, Hand};
 use super::team::Team;
 
 pub struct Game {
@@ -13,8 +13,8 @@ impl Game {
         let team = Team {
             players: vec![Player { 
                 name: "muhagal".to_string(),
-                position: super::player::Position::Forward,
-                hand: super::player::Hand::Right,
+                position: Position::Forward,
+                hand: Hand::Right,
                 cost: 100,
             }]
         };
