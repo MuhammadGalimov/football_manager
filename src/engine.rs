@@ -1,4 +1,91 @@
 use std::collections::HashMap;
+use std::rc::Rc;
+
+struct Page {
+    number: u32,
+    widgets: Vec<Box<dyn Widget>>,
+}
+
+impl Page {
+    fn new(number: u32) -> Self {
+        Page { number, widgets: vec![] }
+    }
+
+    fn add_widget(&mut self, widget: Box<dyn Widget>) {
+        self.widgets.push(widget);
+    }
+
+    fn draw(&self) {
+        for widget in self.widgets.iter() {
+            println!("{}", widget.draw())
+        }
+    }
+}
+
+struct Book {
+    pages: Vec<Page>,
+    current_page_number: u32
+}
+
+impl Book {
+    fn new(current_page_number: u32, pages: Vec<Page>) -> Self {
+        Book { pages, current_page_number }
+    }
+}
+
+struct Env { }
+
+trait Widget {
+    fn draw(&self) -> String;
+}
+
+struct Text<'a> {
+    text: &'a str,   
+}
+
+impl<'a> Widget for Text<'a> {
+    fn draw(&self) -> String {
+        self.text.to_string()
+    }
+}
+
+struct Button<'a> {
+    text: &'a str,
+    tag: (&'a str, &'a str),
+    tagged: bool,
+    jump: fn(&mut Env) -> Option<u32>
+}
+
+impl<'a> Widget for Button<'a> {
+    fn draw(&self) -> String {
+        if self.tagged {
+            format!("{} {} {}", self.tag.0, self.text, self.tag.1)
+        } else {
+            format!("  {}  ", self.text)
+        }
+    }
+}
+
+impl<'a> Default for Button<'a> {
+    fn default() -> Self {
+        Button { 
+            text: "", 
+            tag: (">", "<"), 
+            tagged: false, 
+            jump: |_: &mut Env| { None } 
+        }
+    }
+}
+
+// fn main() {
+//     let mut page = Page::new(0);
+//     page.add_widget(Box::new(Button { text: "New game", tagged: true, ..Default::default() }));
+//     page.add_widget(Box::new(Button { text: "Continue", ..Default::default() }));
+//     page.add_widget(Box::new(Button { text: "Exit", ..Default::default() }));
+
+//     page.draw();
+// }
+
 
 struct Node {
     id: String,

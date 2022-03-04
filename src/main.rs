@@ -15,10 +15,6 @@ use crossterm::{
 use engine::Glob;
 
 fn main() -> Result<()>{
-
-    let game = game::game::Game::new();
-    game.save();
-
     let mut stdout = stdout();
     enable_raw_mode()?;
 
