@@ -12,13 +12,22 @@ use crossterm::{
     },
     event, style::Print, Result, cursor
 };
-use engine::Glob;
+use engine::*;
 
 fn main() -> Result<()>{
     let mut stdout = stdout();
     enable_raw_mode()?;
 
-    let mut glob = init();
+    // let mut glob = init();
+
+    let mut page = Page::new(0);
+    page.add_widget(Box::new(Text::builder("Footbal Manager").build()));
+    page.add_widget(Box::new(Button::builder("New game").tagged(true).build()));
+    page.add_widget(Box::new(Button::builder("Continue").build()));
+    page.add_widget(Box::new(Button::builder("Help").build()));
+    page.add_widget(Box::new(Button::builder("Exit").build()));
+
+    page.draw();
 
     loop {
         execute!(
@@ -27,31 +36,36 @@ fn main() -> Result<()>{
             cursor::Hide
         )?;
 
+        // execute!(
+        //     &mut stdout,
+        //     Print(&glob.view())
+        // )?;
+
         execute!(
             &mut stdout,
-            Print(&glob.view())
+            Print(&page.draw())
         )?;
 
         match event::read()? {
             event::Event::Key(event) => {
                 match event.code {
                     event::KeyCode::Up => {
-                        glob.decrease_index();
+                        // glob.decrease_index();
                     },
                     event::KeyCode::Down => {
-                        glob.increase_index();
+                        // glob.increase_index();
                     },
                     event::KeyCode::Left => {
-                        glob.back();
+                        // glob.back();
                     },
                     event::KeyCode::Right => {
-                        glob.enter();
+                        // glob.enter();
                     },
                     event::KeyCode::Enter => {
-                        glob.enter();
+                        // glob.enter();
                     },
                     event::KeyCode::Backspace => {
-                        glob.back();
+                        // glob.back();
                     },
                     event::KeyCode::Char('q') => break,
                     _ => (),

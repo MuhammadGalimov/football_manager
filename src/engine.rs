@@ -1,45 +1,47 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-struct Page {
+pub struct Page {
     number: u32,
     widgets: Vec<Box<dyn Widget>>,
 }
 
 impl Page {
-    fn new(number: u32) -> Self {
+    pub fn new(number: u32) -> Self {
         Page { number, widgets: vec![] }
     }
 
-    fn add_widget(&mut self, widget: Box<dyn Widget>) {
+    pub fn add_widget(&mut self, widget: Box<dyn Widget>) {
         self.widgets.push(widget);
     }
 
-    fn draw(&self) {
+    pub fn draw(&self) -> String {
+        let mut s = String::from("");
         for widget in self.widgets.iter() {
-            println!("{}", widget.draw())
+            s.push_str(&(widget.draw() + "\n")[..]);
         }
+        s
     }
 }
 
-struct Book {
+pub struct Book {
     pages: Vec<Page>,
     current_page_number: u32
 }
 
 impl Book {
-    fn new(current_page_number: u32, pages: Vec<Page>) -> Self {
+    pub fn new(current_page_number: u32, pages: Vec<Page>) -> Self {
         Book { pages, current_page_number }
     }
 }
 
-struct Env { }
+pub struct Env { }
 
-trait Widget {
+pub trait Widget {
     fn draw(&self) -> String;
 }
 
-struct Text<'a> {
+pub struct Text<'a> {
     text: &'a str,   
 }
 
@@ -49,7 +51,27 @@ impl<'a> Widget for Text<'a> {
     }
 }
 
-struct Button<'a> {
+impl<'a> Text<'a> {
+    pub fn builder(text: &'a str) -> TextBuilder {
+        TextBuilder::new(text)
+    }
+}
+
+pub struct TextBuilder<'a> {
+    text: Text<'a>
+}
+
+impl<'a> TextBuilder<'a> {
+    pub fn new(text: &'a str) -> Self {
+        TextBuilder { text: Text { text } }
+    }
+
+    pub fn build(self) -> Text<'a> {
+        self.text
+    }
+}
+
+pub struct Button<'a> {
     text: &'a str,
     tag: (&'a str, &'a str),
     tagged: bool,
@@ -74,6 +96,41 @@ impl<'a> Default for Button<'a> {
             tagged: false, 
             jump: |_: &mut Env| { None } 
         }
+    }
+}
+
+impl<'a> Button<'a> {
+    pub fn builder(text: &'a str) -> ButtonBuilder {
+        ButtonBuilder::new(text)
+    }
+}
+
+pub struct ButtonBuilder<'a> {
+    button: Button<'a>
+}
+
+impl<'a> ButtonBuilder<'a> {
+    pub fn new(text: &'a str) -> Self {
+        ButtonBuilder { button: Button { text, ..Default::default() } }
+    }
+
+    pub fn jump(mut self, jump: fn(&mut Env) -> Option<u32>) -> Self {
+        self.button.jump = jump;
+        self
+    }
+
+    pub fn tag(mut self, tag: (&'a str, &'a str)) -> Self {
+        self.button.tag = tag;
+        self
+    }
+
+    pub fn tagged(mut self, tagged: bool) -> Self {
+        self.button.tagged = tagged;
+        self
+    }
+
+    pub fn build(self) -> Button<'a> {
+        self.button
     }
 }
 
