@@ -2,25 +2,46 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct Page {
-    number: u32,
-    widgets: Vec<Box<dyn Widget>>,
+    page_number: u32,
+    w_number: u8,
+    text_widgets: HashMap<u8, Text>,
+    button_widgets: HashMap<u8, Button>,
 }
 
 impl Page {
-    pub fn new(number: u32) -> Self {
-        Page { number, widgets: vec![] }
+    pub fn new(page_number: u32) -> Self {
+        Page { 
+            page_number, 
+            w_number: 0, 
+            text_widgets: HashMap::new(),
+            button_widgets: HashMap::new(), 
+        }
     }
 
-    pub fn add_widget(&mut self, widget: Box<dyn Widget>) {
-        self.widgets.push(widget);
+    pub fn add_text_widget(&mut self, widget: Text) {
+        self.text_widgets.insert(self.w_number, widget);
+        self.w_number += 1;
+    }
+
+    pub fn add_button_widget(&mut self, widget: Button) {
+        self.button_widgets.insert(self.w_number, widget);
+        self.w_number += 1;
     }
 
     pub fn draw(&self) -> String {
         let mut s = String::from("");
-        for widget in self.widgets.iter() {
+        for (_, widget) in self.widgets.iter() {
             s.push_str(&(widget.draw() + "\n")[..]);
         }
         s
+    }
+
+    pub fn increase_index(&mut self) {
+
+    }
+
+    pub fn decrease_index(&mut self) {
+
     }
 }
 
@@ -37,21 +58,15 @@ impl Book {
 
 pub struct Env { }
 
-pub trait Widget {
-    fn draw(&self) -> String;
-}
-
 pub struct Text<'a> {
     text: &'a str,   
 }
 
-impl<'a> Widget for Text<'a> {
+impl<'a> Text<'a> {
     fn draw(&self) -> String {
         self.text.to_string()
     }
-}
-
-impl<'a> Text<'a> {
+    
     pub fn builder(text: &'a str) -> TextBuilder {
         TextBuilder::new(text)
     }
@@ -78,16 +93,6 @@ pub struct Button<'a> {
     jump: fn(&mut Env) -> Option<u32>
 }
 
-impl<'a> Widget for Button<'a> {
-    fn draw(&self) -> String {
-        if self.tagged {
-            format!("{} {} {}", self.tag.0, self.text, self.tag.1)
-        } else {
-            format!("  {}  ", self.text)
-        }
-    }
-}
-
 impl<'a> Default for Button<'a> {
     fn default() -> Self {
         Button { 
@@ -100,6 +105,14 @@ impl<'a> Default for Button<'a> {
 }
 
 impl<'a> Button<'a> {
+    fn draw(&self) -> String {
+        if self.tagged {
+            format!("{} {} {}", self.tag.0, self.text, self.tag.1)
+        } else {
+            format!("  {}  ", self.text)
+        }
+    }
+    
     pub fn builder(text: &'a str) -> ButtonBuilder {
         ButtonBuilder::new(text)
     }
