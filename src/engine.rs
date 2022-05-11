@@ -43,9 +43,7 @@ impl Page {
                 s.push_str(&(w.widget.draw() + "\n")[..]);
                 continue;
             }
-        }
 
-        for i in 0..self.w_number {
             if let Some(w) = self.button_widgets
                 .iter()
                 .find(|&item| item.number == i) 
