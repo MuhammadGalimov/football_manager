@@ -21,11 +21,11 @@ fn main() -> Result<()>{
     // let mut glob = init();
 
     let mut page = Page::new(0);
-    page.add_widget(Box::new(Text::builder("Footbal Manager").build()));
-    page.add_widget(Box::new(Button::builder("New game").tagged(true).build()));
-    page.add_widget(Box::new(Button::builder("Continue").build()));
-    page.add_widget(Box::new(Button::builder("Help").build()));
-    page.add_widget(Box::new(Button::builder("Exit").build()));
+    page.add_text_widget(TextBuilder::new("Football Manager").build());
+    page.add_button_widget(ButtonBuilder::new("New game").tagged(true).build());
+    page.add_button_widget(ButtonBuilder::new("Continue").build());
+    page.add_button_widget(ButtonBuilder::new("Help").build());
+    page.add_button_widget(ButtonBuilder::new("Exit").build());
 
     page.draw();
 
@@ -51,9 +51,11 @@ fn main() -> Result<()>{
                 match event.code {
                     event::KeyCode::Up => {
                         // glob.decrease_index();
+                        page.decrease_index();
                     },
                     event::KeyCode::Down => {
                         // glob.increase_index();
+                        page.increase_index();
                     },
                     event::KeyCode::Left => {
                         // glob.back();
@@ -78,13 +80,4 @@ fn main() -> Result<()>{
     }
 
     Ok(())
-}
-
-fn init() -> Glob {
-    let mut glob = Glob::new();
-    glob.add_node("root", "new_game", "Новая игра").unwrap();
-    glob.add_node("root", "continue", "Продолжить").unwrap();
-    glob.add_node("root", "exit", "Выход").unwrap();
-    glob.add_node("new_game", "choose_team", "Выбрать команду");
-    glob
 }

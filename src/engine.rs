@@ -1,47 +1,106 @@
-use std::collections::HashMap;
-use std::rc::Rc;
-
 pub struct Page {
-    page_number: u32,
-    w_number: u8,
-    text_widgets: HashMap<u8, Text>,
-    button_widgets: HashMap<u8, Button>,
+    page_number: usize,
+    w_number: usize,
+    index: Option<usize>,
+    text_widgets: Vec<OrdWidget<Text>>,
+    button_widgets: Vec<OrdWidget<Button>>,
 }
 
 impl Page {
-    pub fn new(page_number: u32) -> Self {
+    pub fn new(page_number: usize) -> Self {
         Page { 
             page_number, 
-            w_number: 0, 
-            text_widgets: HashMap::new(),
-            button_widgets: HashMap::new(), 
+            w_number: 0,
+            index: None, 
+            text_widgets: vec![],
+            button_widgets: vec![], 
         }
     }
 
     pub fn add_text_widget(&mut self, widget: Text) {
-        self.text_widgets.insert(self.w_number, widget);
+        self.text_widgets.push(OrdWidget::new(self.w_number, widget));
         self.w_number += 1;
     }
 
     pub fn add_button_widget(&mut self, widget: Button) {
-        self.button_widgets.insert(self.w_number, widget);
+        self.button_widgets.push(OrdWidget::new(self.w_number, widget));
+
+        if self.index == None {
+            self.index = Some(self.w_number);
+        }
+
         self.w_number += 1;
     }
 
     pub fn draw(&self) -> String {
         let mut s = String::from("");
-        for (_, widget) in self.widgets.iter() {
-            s.push_str(&(widget.draw() + "\n")[..]);
+
+        for i in 0..self.w_number {
+            if let Some(w) = self.text_widgets
+                .iter()
+                .find(|&item| item.number == i) 
+                {
+                s.push_str(&(w.widget.draw() + "\n")[..]);
+                continue;
+            }
         }
+
+        for i in 0..self.w_number {
+            if let Some(w) = self.button_widgets
+                .iter()
+                .find(|&item| item.number == i) 
+                {
+                s.push_str(&(w.widget.draw() + "\n")[..]);
+                continue;
+            }
+        }
+
         s
     }
 
     pub fn increase_index(&mut self) {
-
+        if let Some(index) = self.index {
+            if let Some(position) = self.button_widgets.iter().position(|item| item.number == index) {
+                self.button_widgets[position].widget.tagged = false;
+                
+                if position + 1 == self.button_widgets.len() {
+                    self.button_widgets[0].widget.tagged = true;
+                    self.index = Some(self.button_widgets[0].number);
+                } else {
+                    self.button_widgets[position + 1].widget.tagged = true;
+                    self.index = Some(self.button_widgets[position + 1].number);
+                }
+            }
+        }   
     }
 
     pub fn decrease_index(&mut self) {
+        if let Some(index) = self.index {
+            if let Some(position) = self.button_widgets.iter().position(|item| item.number == index) {
+                self.button_widgets[position].widget.tagged = false;
+                
+                if position == 0 {
+                    if let Some(w) = self.button_widgets.iter_mut().last() {
+                        w.widget.tagged = true;
+                        self.index = Some(w.number);
+                    };
+                } else {
+                    self.button_widgets[position - 1].widget.tagged = true;
+                    self.index = Some(self.button_widgets[position - 1].number);
+                }
+            }
+        }
+    }
+}
 
+pub struct OrdWidget<T> {
+    number: usize,
+    widget: T
+}
+
+impl<T> OrdWidget<T> {
+    fn new(number: usize, widget: T) -> Self {
+        OrdWidget { number, widget }
     }
 }
 
@@ -58,53 +117,38 @@ impl Book {
 
 pub struct Env { }
 
-pub struct Text<'a> {
-    text: &'a str,   
+pub struct Text {
+    text: String,   
 }
 
-impl<'a> Text<'a> {
+impl Text {
     fn draw(&self) -> String {
-        self.text.to_string()
-    }
-    
-    pub fn builder(text: &'a str) -> TextBuilder {
-        TextBuilder::new(text)
+        self.text.clone()
     }
 }
 
-pub struct TextBuilder<'a> {
-    text: Text<'a>
+pub struct TextBuilder {
+    text: String,
 }
 
-impl<'a> TextBuilder<'a> {
-    pub fn new(text: &'a str) -> Self {
-        TextBuilder { text: Text { text } }
+impl TextBuilder {
+    pub fn new(text: &str) -> Self {
+        TextBuilder { text: text.to_string() }
     }
 
-    pub fn build(self) -> Text<'a> {
-        self.text
+    pub fn build(self) -> Text {
+        Text { text: self.text }
     }
 }
 
-pub struct Button<'a> {
-    text: &'a str,
-    tag: (&'a str, &'a str),
+pub struct Button {
+    text: String,
+    tag: (String, String),
     tagged: bool,
     jump: fn(&mut Env) -> Option<u32>
 }
 
-impl<'a> Default for Button<'a> {
-    fn default() -> Self {
-        Button { 
-            text: "", 
-            tag: (">", "<"), 
-            tagged: false, 
-            jump: |_: &mut Env| { None } 
-        }
-    }
-}
-
-impl<'a> Button<'a> {
+impl Button {
     fn draw(&self) -> String {
         if self.tagged {
             format!("{} {} {}", self.tag.0, self.text, self.tag.1)
@@ -112,178 +156,70 @@ impl<'a> Button<'a> {
             format!("  {}  ", self.text)
         }
     }
-    
-    pub fn builder(text: &'a str) -> ButtonBuilder {
-        ButtonBuilder::new(text)
-    }
 }
 
-pub struct ButtonBuilder<'a> {
-    button: Button<'a>
+pub struct ButtonBuilder {
+    text: String,
+    tag: (String, String),
+    tagged: bool,
+    jump: fn(&mut Env) -> Option<u32>
 }
 
-impl<'a> ButtonBuilder<'a> {
-    pub fn new(text: &'a str) -> Self {
-        ButtonBuilder { button: Button { text, ..Default::default() } }
+impl ButtonBuilder {
+    pub fn new(text: &str) -> Self {
+        ButtonBuilder {
+            text: text.to_string(),
+            tag: (">".to_string(), "<".to_string()), 
+            tagged: false, 
+            jump: |_: &mut Env| { None }
+        }
     }
 
     pub fn jump(mut self, jump: fn(&mut Env) -> Option<u32>) -> Self {
-        self.button.jump = jump;
+        self.jump = jump;
         self
     }
 
-    pub fn tag(mut self, tag: (&'a str, &'a str)) -> Self {
-        self.button.tag = tag;
+    pub fn tag(mut self, tag: (&str, &str)) -> Self {
+        self.tag = (tag.0.to_string(), tag.1.to_string());
         self
     }
 
     pub fn tagged(mut self, tagged: bool) -> Self {
-        self.button.tagged = tagged;
+        self.tagged = tagged;
         self
     }
 
-    pub fn build(self) -> Button<'a> {
-        self.button
+    pub fn build(self) -> Button {
+        Button { 
+            text: self.text, 
+            tag: self.tag, 
+            tagged: self.tagged, 
+            jump: self.jump 
+        }
     }
 }
 
-// fn main() {
-//     let mut page = Page::new(0);
-//     page.add_widget(Box::new(Button { text: "New game", tagged: true, ..Default::default() }));
-//     page.add_widget(Box::new(Button { text: "Continue", ..Default::default() }));
-//     page.add_widget(Box::new(Button { text: "Exit", ..Default::default() }));
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn iterators() {
+        let mut h: Vec<(u32, String)> = vec![];
+        h.push((0, "one".to_string()));
+        h.push((2, "two".to_string()));
+        h.push((5, "three".to_string()));
+        h.push((6, "four".to_string()));
+        h.push((10, "five".to_string()));
 
-//     page.draw();
-// }
-
-
-struct Node {
-    id: String,
-    parent_id: String,
-    text: String,
-    children: Vec<String>
-}
-
-impl std::fmt::Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "id: {}\nparent_id: {}\ntext: {}\namount of children: {}",
-            self.id, self.parent_id, self.text, self.children.len())
-    }
-}
-
-impl Node {
-    fn new(id: &str, parent_id: &str, text: &str) -> Self {
-        Node { 
-            id: id.to_string(),
-            parent_id: parent_id.to_string(), 
-            text: text.to_string(), 
-            children: Vec::new() 
-        }
-    }
-
-    fn add_child(&mut self, child_id: &str) {
-        self.children.push(child_id.to_string());
-    }
-
-    fn children(&self) -> Vec<String> {
-        self.children.clone()
-    }
-
-    fn text(&self) -> String {
-        self.text.clone()
-    }
-
-    fn parent_id(&self) -> String {
-        self.parent_id.clone()
-    }
-}
-
-pub struct Glob {
-    nodes: HashMap<String, Node>,
-    point: String,
-    index: usize,
-}
-
-impl Glob {
-    pub fn new() -> Self {
-        let mut nodes = HashMap::new();
-        nodes.insert(String::from("root"), Node::new(
-            "root",
-            "",
-            ""
-        ));
-
-        Glob { nodes, point: String::from("root"), index: 0}
-    }
-
-    fn current_node(&self) -> &Node {
-        self.nodes.get(&self.point[..]).unwrap()
-    }
-
-    pub fn add_node(&mut self, parent_id: &str, id: &str, text: &str) -> Option<()> {
-        match self.nodes.get_mut(parent_id) {
-            Some(parent_node) => {
-                parent_node.add_child(id);
-                self.nodes.insert(id.to_string(), Node::new(id, parent_id, text));
-                Some(())
-            }
-            None => { None }
-        }
-    }
-
-    pub fn view(&self) -> String {
-        let node = self.current_node();
-        let mut output = String::new();
-        for (i, child_id) in node.children().iter().enumerate() {
-            let text = match self.nodes.get(child_id) {
-                Some(child_node) => { child_node.text() },
-                None => { return "error".to_string(); }
-            };
-
-            let brs = if i == self.index {
-                (">", "<\n")
-            } else {
-                (" ", " \n")
-            };
-                    
-            output.push_str(brs.0);
-            output.push_str(&text[..]);
-            output.push_str(brs.1);
+        for (k, v) in h.iter() {
+            println!("key: {}, value: {}", k, v);
         }
 
-        output
-    }
+        println!("------");
 
-    pub fn increase_index(&mut self) {
-        let max_index = self.current_node().children().len();
-        
-        if self.index + 1 == max_index {
-            self.index = 0;
-        } else {
-            self.index = self.index + 1;
+        for (k, v) in h.iter().find(|item| item.0 == 5) {
+            println!("key: {}, value: {}", k, v);
         }
-    }
 
-    pub fn decrease_index(&mut self) {
-        let max_index = self.current_node().children().len();
-        
-        if self.index == 0 {
-            self.index = max_index - 1;
-        } else {
-            self.index = self.index - 1;
-        }
-    }
-
-    pub fn enter(&mut self) {
-        let node = self.current_node();
-        let need = node.children()[self.index].clone();
-        self.point = need;
-        self.index = 0;
-    }
-
-    pub fn back(&mut self) {
-        let node = self.current_node();
-        self.point = node.parent_id();
-        self.index = 0;
     }
 }
