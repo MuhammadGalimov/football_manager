@@ -125,20 +125,41 @@ impl Book {
         Book { pages, current_page_number }
     }
 
+    fn get_page(&self, page_number: usize) -> Option<&Page> {
+        if let Some(position) = self.pages
+            .iter()
+            .position(|item| item.page_number == page_number) {
+                return Some(&self.pages[position])
+        } else {
+            return None;
+        }
+    }
+
+    fn get_page_mut(&mut self, page_number: usize) -> Option<&mut Page> {
+        if let Some(position) = self.pages
+            .iter()
+            .position(|item| item.page_number == page_number) {
+                return Some(&mut self.pages[position])
+        } else {
+            return None;
+        }
+    }
+
     pub fn draw(&self) -> String {
-        self.pages[self.current_page_number].draw()
+        self.get_page(self.current_page_number).unwrap().draw()
     }
 
     pub fn increase_index(&mut self) {
-        self.pages[self.current_page_number].increase_index();
+        self.get_page_mut(self.current_page_number).unwrap().increase_index();
     }
 
     pub fn decrease_index(&mut self) {
-        self.pages[self.current_page_number].decrease_index();
+        self.get_page_mut(self.current_page_number).unwrap().decrease_index();
     }
 
     pub fn enter(&mut self, env: &mut Env) {
-        let new_page_number = self.pages[self.current_page_number].enter(env);
+        let new_page_number = self.get_page_mut(self.current_page_number).unwrap().enter(env);
+
         match new_page_number {
             Some(n) => {
                 self.current_page_number = n;
