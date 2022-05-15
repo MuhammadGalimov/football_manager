@@ -20,14 +20,10 @@ fn main() -> Result<()>{
 
     // let mut glob = init();
 
-    let mut page = Page::new(0);
-    page.add_text_widget(TextBuilder::new("Football Manager").build());
-    page.add_button_widget(ButtonBuilder::new("New game").tagged(true).build());
-    page.add_button_widget(ButtonBuilder::new("Continue").build());
-    page.add_button_widget(ButtonBuilder::new("Help").build());
-    page.add_button_widget(ButtonBuilder::new("Exit").build());
+    let mut book =  Book::new(0, build_pages());
+    book.draw();
 
-    page.draw();
+    let mut env = build_env();
 
     loop {
         execute!(
@@ -43,7 +39,7 @@ fn main() -> Result<()>{
 
         execute!(
             &mut stdout,
-            Print(&page.draw())
+            Print(&book.draw())
         )?;
 
         match event::read()? {
@@ -51,24 +47,17 @@ fn main() -> Result<()>{
                 match event.code {
                     event::KeyCode::Up => {
                         // glob.decrease_index();
-                        page.decrease_index();
+                        book.decrease_index();
                     },
                     event::KeyCode::Down => {
                         // glob.increase_index();
-                        page.increase_index();
-                    },
-                    event::KeyCode::Left => {
-                        // glob.back();
-                    },
-                    event::KeyCode::Right => {
-                        // glob.enter();
+                        book.increase_index();
                     },
                     event::KeyCode::Enter => {
                         // glob.enter();
+                        book.enter(&mut env);
                     },
-                    event::KeyCode::Backspace => {
-                        // glob.back();
-                    },
+                    // only for testing
                     event::KeyCode::Char('q') => break,
                     _ => (),
                 }
@@ -80,4 +69,99 @@ fn main() -> Result<()>{
     }
 
     Ok(())
+}
+
+fn build_pages() -> Vec<Page> {
+    let mut welcome_page = Page::new(0);
+    welcome_page.add_text_widget(
+        TextBuilder::new("Добро пожаловать в игру футбольный менеджер!")
+        .build()
+    );
+    welcome_page.add_button_widget(
+        ButtonBuilder::new("Новая игра")
+        .tagged(true)
+        .jump(|_: &mut Env| { Some(1) })
+        .build()
+    );
+    welcome_page.add_button_widget(
+        ButtonBuilder::new("Продолжить игру")
+        .jump(|_: &mut Env| { Some(2) })
+        .build()
+    );
+    welcome_page.add_button_widget(
+        ButtonBuilder::new("Помощь")
+        .jump(|_: &mut Env| { Some(3) })
+        .build()
+    );
+    welcome_page.add_button_widget(
+        ButtonBuilder::new("Выйти")
+        .build()
+    );
+
+    let mut new_game_page = Page::new(1);
+    new_game_page.add_text_widget(
+        TextBuilder::new("Выберите себе команду")
+        .build()
+    );
+    new_game_page.add_button_widget(
+        ButtonBuilder::new("Команда номер 1")
+            .tagged(true)
+            .jump(|_: &mut Env| { None })
+            .build()
+    );
+    new_game_page.add_button_widget(
+        ButtonBuilder::new("Команда номер 2")
+            .jump(|_: &mut Env| { None })
+            .build()
+    );
+    new_game_page.add_button_widget(
+        ButtonBuilder::new("Команда номер 3")
+            .jump(|_: &mut Env| { None })
+            .build()
+    );
+    new_game_page.add_button_widget(
+        ButtonBuilder::new("Назад")
+            .jump(|_: &mut Env| { Some(0) })
+            .build()
+    );
+
+    let mut continue_page = Page::new(2);
+    continue_page.add_text_widget(
+        TextBuilder::new("Выберите сохраненную игру")
+        .build()
+    );
+    continue_page.add_button_widget(
+        ButtonBuilder::new("Игра 1")
+            .tagged(true)
+            .jump(|_: &mut Env| { Some(0) })
+            .build()
+    );
+    continue_page.add_button_widget(
+        ButtonBuilder::new("Назад")
+            .jump(|_: &mut Env| { Some(0) })
+            .build()
+    );
+
+    let mut help_page = Page::new(3);
+    help_page.add_text_widget(
+        TextBuilder::new("Помощь по игре:")
+        .build()
+    );
+    help_page.add_button_widget(
+        ButtonBuilder::new("Назад")
+            .tagged(true)
+            .jump(|_: &mut Env| { Some(0) })
+            .build()
+    );
+
+    vec![
+        welcome_page, 
+        new_game_page, 
+        continue_page, 
+        help_page
+    ]
+}
+
+fn build_env() -> Env {
+    Env {}
 }

@@ -89,6 +89,19 @@ impl Page {
             }
         }
     }
+
+    pub fn enter(&self, env: &mut Env) -> Option<usize> {
+        if let Some(index) = self.index {
+            if let Some(position) = self.button_widgets.iter().position(|item| item.number == index) {
+                let new_page_number = (self.button_widgets[position].widget.jump)(env);
+                return new_page_number;
+            } else {
+                return None;
+            }
+        } else {
+            return None;
+        }
+    }
 }
 
 pub struct OrdWidget<T> {
@@ -104,12 +117,34 @@ impl<T> OrdWidget<T> {
 
 pub struct Book {
     pages: Vec<Page>,
-    current_page_number: u32
+    current_page_number: usize,
 }
 
 impl Book {
-    pub fn new(current_page_number: u32, pages: Vec<Page>) -> Self {
+    pub fn new(current_page_number: usize, pages: Vec<Page>) -> Self {
         Book { pages, current_page_number }
+    }
+
+    pub fn draw(&self) -> String {
+        self.pages[self.current_page_number].draw()
+    }
+
+    pub fn increase_index(&mut self) {
+        self.pages[self.current_page_number].increase_index();
+    }
+
+    pub fn decrease_index(&mut self) {
+        self.pages[self.current_page_number].decrease_index();
+    }
+
+    pub fn enter(&mut self, env: &mut Env) {
+        let new_page_number = self.pages[self.current_page_number].enter(env);
+        match new_page_number {
+            Some(n) => {
+                self.current_page_number = n;
+            },
+            None => {}
+        }
     }
 }
 
@@ -143,7 +178,7 @@ pub struct Button {
     text: String,
     tag: (String, String),
     tagged: bool,
-    jump: fn(&mut Env) -> Option<u32>
+    jump: fn(&mut Env) -> Option<usize>
 }
 
 impl Button {
@@ -160,7 +195,7 @@ pub struct ButtonBuilder {
     text: String,
     tag: (String, String),
     tagged: bool,
-    jump: fn(&mut Env) -> Option<u32>
+    jump: fn(&mut Env) -> Option<usize>
 }
 
 impl ButtonBuilder {
@@ -173,7 +208,7 @@ impl ButtonBuilder {
         }
     }
 
-    pub fn jump(mut self, jump: fn(&mut Env) -> Option<u32>) -> Self {
+    pub fn jump(mut self, jump: fn(&mut Env) -> Option<usize>) -> Self {
         self.jump = jump;
         self
     }
