@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 pub struct Page {
     page_number: usize,
     w_number: usize,
@@ -5,6 +7,10 @@ pub struct Page {
     text_widgets: Vec<OrdWidget<Text>>,
     button_widgets: Vec<OrdWidget<Button>>,
 }
+
+// todo: impl trait Env
+// todo: add action button, without env
+// todo: where should be save function?
 
 impl Page {
     pub fn new(page_number: usize) -> Self {
@@ -38,17 +44,17 @@ impl Page {
         for i in 0..self.w_number {
             if let Some(w) = self.text_widgets
                 .iter()
-                .find(|&item| item.number == i) 
+                .find(|&item| item.number() == i) 
                 {
-                s.push_str(&(w.widget.draw() + "\n")[..]);
+                s.push_str(&(w.draw() + "\n")[..]);
                 continue;
             }
 
             if let Some(w) = self.button_widgets
                 .iter()
-                .find(|&item| item.number == i) 
+                .find(|&item| item.number() == i) 
                 {
-                s.push_str(&(w.widget.draw() + "\n")[..]);
+                s.push_str(&(w.draw() + "\n")[..]);
                 continue;
             }
         }
@@ -58,15 +64,15 @@ impl Page {
 
     pub fn increase_index(&mut self) {
         if let Some(index) = self.index {
-            if let Some(position) = self.button_widgets.iter().position(|item| item.number == index) {
-                self.button_widgets[position].widget.tagged = false;
+            if let Some(position) = self.button_widgets.iter().position(|item| item.number() == index) {
+                self.button_widgets[position].tagged = false;
                 
                 if position + 1 == self.button_widgets.len() {
-                    self.button_widgets[0].widget.tagged = true;
-                    self.index = Some(self.button_widgets[0].number);
+                    self.button_widgets[0].tagged = true;
+                    self.index = Some(self.button_widgets[0].number());
                 } else {
-                    self.button_widgets[position + 1].widget.tagged = true;
-                    self.index = Some(self.button_widgets[position + 1].number);
+                    self.button_widgets[position + 1].tagged = true;
+                    self.index = Some(self.button_widgets[position + 1].number());
                 }
             }
         }   
@@ -74,17 +80,17 @@ impl Page {
 
     pub fn decrease_index(&mut self) {
         if let Some(index) = self.index {
-            if let Some(position) = self.button_widgets.iter().position(|item| item.number == index) {
-                self.button_widgets[position].widget.tagged = false;
+            if let Some(position) = self.button_widgets.iter().position(|item| item.number() == index) {
+                self.button_widgets[position].tagged = false;
                 
                 if position == 0 {
                     if let Some(w) = self.button_widgets.iter_mut().last() {
-                        w.widget.tagged = true;
-                        self.index = Some(w.number);
-                    };
+                        w.tagged = true;
+                        self.index = Some(w.number());
+                    }
                 } else {
-                    self.button_widgets[position - 1].widget.tagged = true;
-                    self.index = Some(self.button_widgets[position - 1].number);
+                    self.button_widgets[position - 1].tagged = true;
+                    self.index = Some(self.button_widgets[position - 1].number());
                 }
             }
         }
@@ -92,8 +98,8 @@ impl Page {
 
     pub fn enter(&self, env: &mut Env) -> Option<usize> {
         if let Some(index) = self.index {
-            if let Some(position) = self.button_widgets.iter().position(|item| item.number == index) {
-                let new_page_number = (self.button_widgets[position].widget.jump)(env);
+            if let Some(position) = self.button_widgets.iter().position(|item| item.number() == index) {
+                let new_page_number = (self.button_widgets[position].jump)(env);
                 return new_page_number;
             } else {
                 return None;
@@ -112,6 +118,24 @@ pub struct OrdWidget<T> {
 impl<T> OrdWidget<T> {
     fn new(number: usize, widget: T) -> Self {
         OrdWidget { number, widget }
+    }
+
+    fn number(&self) -> usize {
+        self.number
+    }
+}
+
+impl<T> Deref for OrdWidget<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.widget
+    }
+}
+
+impl<T> DerefMut for OrdWidget<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.widget
     }
 }
 

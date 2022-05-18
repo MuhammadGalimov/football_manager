@@ -1,5 +1,6 @@
 mod engine;
 mod game;
+mod env;
 
 use std::io::{stdout, Write};
 use crossterm::{
@@ -133,7 +134,7 @@ fn build_pages() -> Vec<Page> {
     continue_page.add_button_widget(
         ButtonBuilder::new("Игра 1")
             .tagged(true)
-            .jump(|_: &mut Env| { Some(0) })
+            .jump(|_: &mut Env| { None })
             .build()
     );
     continue_page.add_button_widget(
