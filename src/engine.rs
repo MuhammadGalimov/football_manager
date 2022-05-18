@@ -1,4 +1,5 @@
 use std::ops::{Deref, DerefMut};
+use super::env::Env;
 
 pub struct Page {
     page_number: usize,
@@ -8,7 +9,6 @@ pub struct Page {
     button_widgets: Vec<OrdWidget<Button>>,
 }
 
-// todo: impl trait Env
 // todo: add action button, without env
 // todo: where should be save function?
 
@@ -193,8 +193,6 @@ impl Book {
     }
 }
 
-pub struct Env { }
-
 pub struct Text {
     text: String,   
 }
@@ -276,6 +274,10 @@ impl ButtonBuilder {
             jump: self.jump 
         }
     }
+}
+
+pub trait ToButton {
+    fn to_button(&self, jump: fn(&mut Env) -> Option<usize>) -> Button;
 }
 
 #[cfg(test)]

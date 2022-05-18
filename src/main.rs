@@ -1,5 +1,5 @@
 mod engine;
-mod game;
+mod player;
 mod env;
 
 use std::io::{stdout, Write};
@@ -13,13 +13,13 @@ use crossterm::{
     },
     event, style::Print, Result, cursor
 };
+
 use engine::*;
+use env::Env;
 
 fn main() -> Result<()>{
     let mut stdout = stdout();
     enable_raw_mode()?;
-
-    // let mut glob = init();
 
     let mut book =  Book::new(0, build_pages());
     book.draw();
@@ -33,11 +33,6 @@ fn main() -> Result<()>{
             cursor::Hide
         )?;
 
-        // execute!(
-        //     &mut stdout,
-        //     Print(&glob.view())
-        // )?;
-
         execute!(
             &mut stdout,
             Print(&book.draw())
@@ -47,15 +42,12 @@ fn main() -> Result<()>{
             event::Event::Key(event) => {
                 match event.code {
                     event::KeyCode::Up => {
-                        // glob.decrease_index();
                         book.decrease_index();
                     },
                     event::KeyCode::Down => {
-                        // glob.increase_index();
                         book.increase_index();
                     },
                     event::KeyCode::Enter => {
-                        // glob.enter();
                         book.enter(&mut env);
                     },
                     // only for testing
